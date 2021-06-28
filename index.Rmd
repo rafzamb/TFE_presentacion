@@ -28,7 +28,7 @@ library(lubridate)
 
 class: center
 
-```{r xaringan-themer, include=FALSE, warning=FALSE}
+```{r xaringan-themer, include=FALSE, warning=FALSE, eval=FALSE}
 library(xaringanthemer)
 #style_mono_light(base_color = "#23395b")
 #style_duo_accent(primary_color = "#FFFFFF", secondary_color = "#FA795E")
@@ -442,14 +442,7 @@ knitr::include_graphics('plot_animate.gif')
 ```
 
 
-```{css, echo = FALSE}
-img.animated-gif{
-  width: 20px;
-  height: 20px;
-}
-```
-
-<img class="animated-gif"src="plot_animate.gif">
+<img class="animated-gif"src="animate-delitos-1.gif">
 
 
 
