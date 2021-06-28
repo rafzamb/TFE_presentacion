@@ -494,7 +494,7 @@ knitr::include_graphics('discretizacion_binaria.png')
 
 * **Modelo de series de tiempo** 📉
 
-🔸  Se utiliza el modelo **“Croton”**, siendo un modelo especial de regresiones de conteo para series intermitentes, que toma en cuenta únicamente el histórico de la ocurrencia de delitos. En la siguiente figura, se muestra el conteo histórico de delitos de una de las esquinas de CABA.
+🔸  Se utiliza el modelo **“Croston”**, siendo un modelo especial de regresiones de conteo para series intermitentes, que toma en cuenta únicamente el histórico de la ocurrencia de delitos. En la siguiente figura, se muestra el conteo histórico de delitos de una de las esquinas de CABA.
 
 --
 
