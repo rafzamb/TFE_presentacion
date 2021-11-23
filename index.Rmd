@@ -1,9 +1,9 @@
 ---
-title: "Predicción de ocurrencia de delitos"
+title: "Predicción de ocurrencia de delitos MRG"
 subtitle: "Implementación de modelos predictivos en base a los casos registrados en CABA durante el periodo 2017-2019"
 author: "Rafael Zambrano"
 institute: "Universidad de Buenos Aires, Facultad de Ciencias Economicas, ENAP"
-date: "2021/06/28"
+date: "2021/11/23"
 output:
   xaringan::moon_reader:
     seal: false
@@ -52,12 +52,12 @@ knitr::include_graphics('fondo_fce.png')
 <br>
 <br>
 
- <font size="10"> MRG: Propuesta de Trabajo Final</font> 
+ <font size="10"> MRG: Trabajo Práctico Final</font> 
 
 <br>
 <br>
 
-#### 2021-10-19
+#### 2021-11-23
 
 #### Rafael Zambrano
 ---
@@ -71,7 +71,7 @@ knitr::include_graphics('fondo_fce.png')
 <br>
 <br>
 
-## Ocurrencia de delitos en las esquinas de CABA, casos registrados durante el periodo 2017-2019
+## Análisis de ocurrencia delictiva en las esquinas de CABA, casos registrados durante el periodo 2017-2019
 
 <br>
 
@@ -80,7 +80,7 @@ knitr::include_graphics('fondo_fce.png')
 ---
 # Resumen
 
-🔸 El foco principal de este proyecto, reside en contextualizar la problemática de la criminalidad en la ciudad de Buenos Aires, con base en los casos registrados entre los años 2017 y 2019. Relacionando las esquinas de la ciudad con los elementos de entorno cercano a dichas intersección de calles.
+🔸 El foco principal de este estudio, reside en contextualizar la problemática de la criminalidad en la ciudad de Buenos Aires, con base en los casos registrados entre los años 2017 y 2019. Relacionando las esquinas de la ciudad con los elementos de entorno cercano a la ocurrencia del delito.
 
 
 ---
@@ -95,7 +95,7 @@ knitr::include_graphics('fondo_fce.png')
 
 --
 
-🔸 ¿Cómo puede relacionarse el entorno geográfico y la ocurrencia delictiva, mediante un modelo de regresión de conetos?
+🔸 ¿Cómo puede relacionarse el entorno geográfico y la ocurrencia delictiva, mediante modelos de regresión de coneto?
 
 <br>
 
@@ -121,25 +121,67 @@ knitr::include_graphics('fondo_fce.png')
 
 <br>
 
-```{r, echo=FALSE,  out.width='50%', fig.align='center',eval=FALSE}
-knitr::include_graphics('dist_delitos.png')
-```
-
 ```{r, echo=FALSE, fig.align='center', out.width='70%', out.height='70%'}
-library(rcrimeanalysis)
+
+Data_set_modelos <- readRDS("Data_set_modelos.rds")
+
+dataset <- Data_set_modelos %>% 
+  filter(pliegue == 24) %>% 
+  select(-c(pliegue, delitos_next_3))
+
+
+my_map_heat = function (data, pts = NULL,opacity = 0.01, radius = 0.1) {
+  if (is.null(pts)) {
+    pts <- TRUE
+  }
+  if (!is.logical(pts)) {
+    stop("pts must be specified as boolean: TRUE or FALSE")
+  }
+  lat <- as.numeric(data$lat)
+  lon <- as.numeric(data$long)
+  bwlat <- stats::bw.nrd0(lat)
+  bwlon <- stats::bw.nrd0(lon)
+  kde <- KernSmooth::bkde2D(cbind(lon, lat), bandwidth = c(bwlon, 
+                                                           bwlat), gridsize = c(100, 100))
+  CL <- grDevices::contourLines(kde$x1, kde$x2, kde$fhat)
+  LEVS <- as.factor(sapply(CL, `[[`, "level"))
+  NLEV <- length(levels(LEVS))
+  pgons <- lapply(1:length(CL), function(i) sp::Polygons(list(sp::Polygon(cbind(CL[[i]]$x, 
+                                                                                CL[[i]]$y))), ID = i))
+  spgons = sp::SpatialPolygons(pgons)
+  if (isTRUE(pts)) {
+    map <- leaflet::leaflet(data) %>% 
+      leaflet::addTiles() %>% 
+      leaflet::addPolygons(data = spgons, color = grDevices::heat.colors(NLEV, NULL)[LEVS]) %>% 
+      leaflet::addCircles(lon, lat, color = "purple",opacity = opacity, radius = radius)
+  }
+  else {
+    map <- leaflet::leaflet(data) %>% 
+      leaflet::addTiles() %>% 
+      leaflet::addPolygons(data = spgons, color = grDevices::heat.colors(NLEV, 
+                                                                         NULL)[LEVS]) 
+    
+  }
+  return(map)
+}
+
 
 delitos <- readRDS("delitos.rds")
 
 delitos %>% 
-  dplyr::rename(latitude = lat, longitude = long) %>% 
-  kde_map(pts = F)
+  
+  filter(fecha >= "2019-12-01" & fecha <= "2020-01-01") %>%
+  
+  mutate(across(c(lat,long), ~ ifelse(.x < -100, .x/1000 ,.x))) %>% 
+  
+  my_map_heat(pts = TRUE)
 ```
 
 ---
 
 # Conjunto de Datos
 
-Son seleccionadas 2023 esquinas de CABA, indexando elementos de entono fisico y temporlaes para el mes de diciembre del año 2019.
+Son seleccionadas 1246 esquinas de CABA, indexando elementos de entono fisico y temporlaes para el mes de diciembre del año 2019.
 
 --
 
@@ -147,62 +189,68 @@ Son seleccionadas 2023 esquinas de CABA, indexando elementos de entono fisico y 
 
 Dentro de estos elementos se mencionan algunos como locales bailables, estaciones de metro, comisarías de policía, estaciones de servicio, embajadas, cines, entre otros. 
 
---
-
-## 🔸 Elementos meteorológicos 🌦
-
-Adicionalmente, se agregan los factores meteorológicos, siendo los mismos la temperatura promedio, mililitros de agua, lluvia y velocidad promedio del viento.
-
----
-
-# Conjunto de Datos
-
-🔸 El conjunto de datos fue almacenado en el paquete **"sknifedatar"** 📦. 
-
---
-
-#### sknifedatar 📦 puede instalarse mediante el lenguaje estadístico R a través de la siguiente sintaxis:
-
-```{r, eval=FALSE}
-install.packages('sknifedatar')
-```
-
---
-
-```{r, echo=FALSE, out.width='20%', out.height='20%', fig.align='center'}
-knitr::include_graphics('sknifedatar.png')
-```
-
-Package ‘sknifedatar’ (2021) “Swiss Knife of Data” Rafael Zambrano [aut, cre], Karina Bartolomé [aut]. CRAN.R-project.org/package=sknifedatar
-
 ---
 # Transformación y limpieza de datos
 
-🔸 Este dataset cuenta con 69 columnas y 2.023 observaciones, las columnas agrupan las variables de entorno, clima y el historial de delitos ocurridos.
+🔸 El dataset cuenta con 49 columnas y 1246 observaciones, las columnas agrupan las variables de entorno y el historial de delitos ocurridos.
 
 --
 
 ```{r ,eval=FALSE}
-library(sknifedatar)
-
-data_crime_clime %>% head()
+dataset %>% head()
 ```
 
 
 ```{r ,echo=FALSE}
-library(sknifedatar)
-
-data <- sknifedatar::data_crime_clime %>% filter(pliegue == 13) %>% relocate(id, lat, long)
-
-data %>% 
+dataset %>% 
   head() %>% 
   rmarkdown::paged_table(list(rows.print = 6))
 ```
 
 ---
-# Transformación y limpieza de datos
+# Análisis exploratorio de datos
 
 
 ```{r, echo=FALSE}
-knitr::include_graphics('mapa.png')
+tab = table(dataset$delitos)
+tab = as.data.frame(tab)
+
+ggplot(tab,aes(x=Var1,y=Freq)) + geom_col() + theme_minimal() +
+  ggtitle("Dsitribución de la ocurrencia de delitos") +
+  ylab("Númro de esquinas") +
+  xlab("Número de delitos")
+
 ```
+
+
+---
+# Análisis exploratorio de datos
+
+
+```{r ,echo=FALSE}
+library(tidyverse)
+library(skimr)
+library(tidymodels)
+
+Receta <- recipe(delitos ~ ., data = dataset) %>% 
+  
+  step_mutate(bancos = atm + bancos) %>% 
+  
+  step_select(-atm) %>% 
+  
+  step_nzv(all_predictors(), freq_cut = 75/25)
+
+
+dataset_def <- Receta %>% prep() %>% bake(dataset)
+
+prueba <- dataset_def %>% select(delitos,
+                                 bancos                             ,
+                                 meses_sin_delitos                  ,
+                                 colectivo                          ,
+                                 garajes                            ,
+                                 educativos                         )
+
+
+prueba %>% skim_without_charts() %>% yank("numeric")
+```
+
