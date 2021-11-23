@@ -38,7 +38,7 @@ Receta <- recipe(delitos ~ ., data = dataset) %>%
 
 dataset_def <- Receta %>% prep() %>% bake(dataset)
 
-dataset_def %>% skim()
+dataset_def %>% skim(where(is.numeric))
 
 
 # EDA target --------------------------------------------------------------
@@ -65,8 +65,6 @@ m_poisson <-glm(delitos~.,family=poisson(link="log"),data=prueba)
 summary(m_poisson)
 
 
-check_model(m_poisson)
-
 check_zeroinflation(m_poisson)
 
 check_overdispersion(m_poisson)
@@ -78,7 +76,6 @@ check_overdispersion(m_poisson)
 # Comparacion de modelo ---------------------------------------------------
 
 #m_poisson <- m_poisson %>% select_parameters()
-
 
 #BN
 library(MASS)
@@ -136,6 +133,7 @@ table_binomialn <- function(y, target){
 table_binomialn <- table_binomialn(m_binomialn, prueba)
 
 
+
 actual <- data.frame(table(prueba$delitos))[,2]
 
 comp<-cbind(
@@ -145,6 +143,7 @@ comp<-cbind(
   qpoisson = table_quasipoisson$tabla$table1p,
   binomialn = table_binomialn$tabla$table1p
   ) %>% as_tibble()
+
 
 
 ## Modelos con inflacion en 0
@@ -191,6 +190,7 @@ root.pois <- rootogram(m_poisson, style = "hanging", plot = FALSE)
 root.nb   <- rootogram(m_binomialn, style = "hanging", plot = FALSE)
 root.zinb <- rootogram(m_zinb, style = "hanging", plot = FALSE)
 root.hurdle <- rootogram(m_hurdle, style = "hanging", plot = FALSE)
+
 
 ylims <- ylim(-2, 20)  # common scale for comparison
 cowplot:: plot_grid(autoplot(root.pois) + ylims,
